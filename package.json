@@ -4,6 +4,7 @@
   "description": "Tello Drone API in node.js",
   "main": "./bin/index.js",
   "scripts": {
+    "build": "tsc",
     "test": "mocha ./bin/test/**.js"
   },
   "keywords": [
