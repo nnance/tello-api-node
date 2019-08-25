@@ -5,6 +5,7 @@
   "main": "./bin/index.js",
   "scripts": {
     "build": "tsc",
+    "start": "node ./bin/index.js",
     "test": "mocha ./bin/test/**.js"
   },
   "keywords": [
