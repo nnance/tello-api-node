@@ -9,6 +9,6 @@ export const voidWriter: LogWriter = (msg) => {};
 
 export const logFactory: Logger = (writer, module, prefix = "") => (msg) => {
     if (!process.env.LOG || process.env.LOG === module) {
-        writer(`${prefix}${msg}`);
+        writer(`${prefix} - ${msg}`);
     }
 };
