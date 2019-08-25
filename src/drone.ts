@@ -1,5 +1,5 @@
 import { createSocket, Socket } from "dgram";
-import { AddressInfo } from "net";
+import { commander, initSDK } from "./controller";
 import { connect } from "./listener";
 import { logFactory, LogWriter } from "./logging";
 
@@ -8,29 +8,11 @@ const droneAddr = {
     port: 8889,
 };
 
-const createConnection = (port = 8890): Promise<Socket> => {
+const createConnector = async (log: LogWriter, port?: number, address?: string, logThrottle?: number) => {
     const socket = createSocket("udp4");
-    return new Promise((res) => socket.bind(port, () => res(socket)));
-};
-
-const commander = (log: LogWriter, socket: Socket, address: string) => (command: string) => {
-    const { port } = socket.address() as AddressInfo;
-    socket.send(command, port, address);
-    log(`sent ${command}`);
+    await new Promise((res) => socket.bind(port, () => res(socket)));
+    connect(log, socket, logThrottle);
     return socket;
-};
-
-const initSDK = (log: LogWriter, socket: Socket, address: string) => commander(log, socket, address)("command");
-
-const createConnector = async (log: LogWriter, port?: number, address?: string) => {
-    const socket = await createConnection(port);
-    connect(log, socket);
-    return socket;
-};
-
-const createDrone = async (log: LogWriter, address: string, port: number) => {
-    const socket = await createConnector(log, port, address);
-    return initSDK(log, socket, address);
 };
 
 export const droneFactory = async (logWriter: LogWriter) => {
@@ -39,9 +21,10 @@ export const droneFactory = async (logWriter: LogWriter) => {
     const logger = logFactory(logWriter, "drone", `${address}:${port}`);
     const connLogger = logFactory(logWriter, "drone", `0.0.0.0:8890`);
 
-    const drone = await createDrone(logger, address, port);
+    const drone = await createConnector(logger, port, address, 0);
     const sender = commander(logger, drone, address);
 
+    await initSDK(sender);
     await createConnector(connLogger, 8890);
 
     return {

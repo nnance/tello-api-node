@@ -58,7 +58,7 @@ describe("Listener", () => {
     describe("when connecting with a custom listener", () => {
         it("should call the listener", () => {
             let stateSpy = {};
-            connect(logger, emitter, (state) => stateSpy = state);
+            connect(logger, emitter, 100, (state) => stateSpy = state);
             emitter.emit("message", droneStatus);
             deepEqual(stateSpy, droneStatusObj);
         });

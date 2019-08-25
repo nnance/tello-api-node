@@ -28,9 +28,11 @@ export const stateParser = (state: string) => {
     return state.split(";").filter(isKey).reduce(addKey, {});
 };
 
-export const connect = (logger: LogWriter, emitter: EventEmitter, listener?: (state: {}) => void) => {
+export type StateListener = (state: {}) => void;
+
+export const connect = (logger: LogWriter, emitter: EventEmitter, logThrottle = 2000, listener?: StateListener) => {
     // drone sends hundreds of messages per minute so this handler will throttle them to only send on defined interval
-    const msgThrottler = throttle(messageHandler(logger), 2000);
+    const msgThrottler = throttle(messageHandler(logger), logThrottle);
 
     emitter.on("message", msgThrottler);
     emitter.on("error", errorHandler(logger));
