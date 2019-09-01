@@ -56,6 +56,7 @@ export const droneFactory = async (logWriter: LogWriter) => {
     return Object.assign(controller, {
         disconnect: () => {
             controller.disconnect();
+            connector.removeAllListeners();
             connector.close();
         },
     });

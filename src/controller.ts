@@ -21,7 +21,10 @@ export const controllerFactory = (log: LogWriter, socket: Socket, address: strin
     const sender = commander(log, socket, address);
     return {
         back: (cm: number) => sender(`back ${cm}`),
-        disconnect: () => socket.close(),
+        disconnect: () => {
+            socket.removeAllListeners();
+            socket.close();
+        },
         down: (cm: number) => sender(`down ${cm}`),
         emergency: () => sender("emergency"),
         flip: (direction: Direction) => sender(`flip ${direction}`),
