@@ -1,4 +1,4 @@
-import { createSocket } from "dgram";
+import { createSocket, Socket } from "dgram";
 import { controllerFactory, initSDK } from "./controller";
 import { connect } from "./listener";
 import { logFactory, LogWriter } from "./logging";
@@ -10,10 +10,37 @@ const droneAddr = {
 
 const createConnector = async (log: LogWriter, port?: number, address?: string, logThrottle?: number) => {
     const socket = createSocket("udp4");
-    await new Promise((res) => socket.bind(port, () => res(socket)));
+    await new Promise((res, rej) => {
+        socket.once("error", rej);
+        socket.bind(port, () => res(socket));
+    });
     connect(log, socket, logThrottle);
     return socket;
 };
+
+export enum Direction {
+    left = "l",
+    right = "r",
+    forward = "f",
+    back = "b",
+}
+
+export interface IDrone {
+    back: (cm: number) => Promise<Socket>;
+    disconnect: () => void;
+    down: (cm: number) => Promise<Socket>;
+    emergency: () => Promise<Socket>;
+    flip: (direction: Direction) => Promise<Socket>;
+    forward: (cm: number) => Promise<Socket>;
+    land: () => Promise<Socket>;
+    left: (cm: number) => Promise<Socket>;
+    right: (cm: number) => Promise<Socket>;
+    rotateClockwise: (degrees: number) => Promise<Socket>;
+    rotateCounterClockwise: (degrees: number) => Promise<Socket>;
+    stop: () => Promise<Socket>;
+    takeOff: () => Promise<Socket>;
+    up: (cm: number) => Promise<Socket>;
+}
 
 export const droneFactory = async (logWriter: LogWriter) => {
     const { address, port } = droneAddr;

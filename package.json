@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Tello Drone API in node.js",
   "main": "./bin/drone.js",
+  "types": "./bin/drone.d.ts",
   "scripts": {
     "build": "tsc",
     "start": "node ./bin/index.js",
