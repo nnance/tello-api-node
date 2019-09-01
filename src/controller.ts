@@ -23,7 +23,24 @@ const commander = (log: LogWriter, socket: Socket, address: string): Sender => a
 
 export const initSDK = (log: LogWriter, socket: Socket, address: string) => commander(log, socket, address)("command");
 
-export const controllerFactory = (log: LogWriter, socket: Socket, address: string) => {
+export interface IDrone {
+    back: (cm: number) => Promise<Socket>;
+    disconnect: () => void;
+    down: (cm: number) => Promise<Socket>;
+    emergency: () => Promise<Socket>;
+    flip: (direction: Direction) => Promise<Socket>;
+    forward: (cm: number) => Promise<Socket>;
+    land: () => Promise<Socket>;
+    left: (cm: number) => Promise<Socket>;
+    right: (cm: number) => Promise<Socket>;
+    rotateClockwise: (degrees: number) => Promise<Socket>;
+    rotateCounterClockwise: (degrees: number) => Promise<Socket>;
+    stop: () => Promise<Socket>;
+    takeOff: () => Promise<Socket>;
+    up: (cm: number) => Promise<Socket>;
+  }
+
+export const controllerFactory = (log: LogWriter, socket: Socket, address: string): IDrone => {
     const sender = commander(log, socket, address);
     return {
         back: (cm: number) => sender(`back ${cm}`),
