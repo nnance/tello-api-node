@@ -1,15 +1,15 @@
 import { Socket } from "dgram";
 import { AddressInfo } from "net";
-import { LogWriter } from "./logging";
+import { logFactory, LogWriter } from "./logging";
 
-export type Sender = (command: string) => Promise<Socket>;
+export type Sender = (command: string, timeout?: number) => Promise<Socket>;
 
 const commandSender = (log: LogWriter, socket: Socket, address: string, command: string) => {
     const { port } = socket.address() as AddressInfo;
     socket.send(command, port, address, () => log(`sent ${command}`));
 };
 
-const commander = (log: LogWriter, socket: Socket, address: string, timeout?: number): Sender => async (command) => {
+const commander = (log: LogWriter, socket: Socket, address: string): Sender => async (command, timeout?: number) => {
     await new Promise((res, rej) => {
         let timeoutId: NodeJS.Timeout;
         socket.once("error", rej);
@@ -21,9 +21,13 @@ const commander = (log: LogWriter, socket: Socket, address: string, timeout?: nu
         });
         if (timeout) {
             timeoutId = setTimeout(() => {
-                socket.removeAllListeners();
-                socket.close();
-                rej();
+                log("command timed out");
+                if (command === "command") {
+                    disconnectSocket(log, socket);
+                    rej();
+                } else {
+                    res();
+                }
             }, timeout);
         }
         commandSender(log, socket, address, command);
@@ -31,7 +35,17 @@ const commander = (log: LogWriter, socket: Socket, address: string, timeout?: nu
     return socket;
 };
 
-export const initSDK = (log: LogWriter, socket: Socket, address: string) => commander(log, socket, address, 10000)("command");
+export const disconnectSocket = (log: LogWriter, socket: Socket) => {
+    log("disconnecting socket");
+    socket.removeAllListeners();
+    socket.close();
+};
+
+const logger = (log: LogWriter) => logFactory(log, "controller");
+
+export const initSDK = (log: LogWriter, socket: Socket, address: string) => {
+    return commander(logger(log), socket, address)("command", 10000);
+};
 
 export enum FlightDirection {
     left = "l",
@@ -57,25 +71,23 @@ export interface IFlightController {
     up: (cm: number) => Promise<Socket>;
 }
 
-export const controllerFactory = (log: LogWriter, socket: Socket, address: string): IFlightController => {
-    const sender = commander(log, socket, address);
+export const controllerFactory = (writer: LogWriter, socket: Socket, address: string): IFlightController => {
+    const controllerLogger = logger(writer);
+    const sender = commander(controllerLogger, socket, address);
     return {
-        back: (cm: number) => sender(`back ${cm}`),
-        disconnect: () => {
-            socket.removeAllListeners();
-            socket.close();
-        },
-        down: (cm: number) => sender(`down ${cm}`),
+        back: (cm: number, timeout?: number) => sender(`back ${cm}`, timeout),
+        disconnect: () => disconnectSocket(controllerLogger, socket),
+        down: (cm: number, timeout?: number) => sender(`down ${cm}`, timeout),
         emergency: () => sender("emergency"),
-        flip: (direction: FlightDirection) => sender(`flip ${direction}`),
-        forward: (cm: number) => sender(`forward ${cm}`),
-        land: () => sender("land"),
-        left: (cm: number) => sender(`left ${cm}`),
-        right: (cm: number) => sender(`right ${cm}`),
-        rotateClockwise: (degrees: number) => sender(`cw ${degrees}`),
-        rotateCounterClockwise: (degrees: number) => sender(`ccw ${degrees}`),
-        stop: () => sender("stop"),
-        takeOff: () => sender("takeoff"),
-        up: (cm: number) => sender(`up ${cm}`),
+        flip: (direction: FlightDirection, timeout?: number) => sender(`flip ${direction}`, timeout),
+        forward: (cm: number, timeout?: number) => sender(`forward ${cm}`, timeout),
+        land: (timeout?: number) => sender("land", timeout),
+        left: (cm: number, timeout?: number) => sender(`left ${cm}`, timeout),
+        right: (cm: number, timeout?: number) => sender(`right ${cm}`, timeout),
+        rotateClockwise: (degrees: number, timeout?: number) => sender(`cw ${degrees}`, timeout),
+        rotateCounterClockwise: (degrees: number, timeout?: number) => sender(`ccw ${degrees}`, timeout),
+        stop: (timeout?: number) => sender("stop", timeout),
+        takeOff: (timeout?: number) => sender("takeoff", timeout),
+        up: (cm: number, timeout?: number) => sender(`up ${cm}`, timeout),
     };
 };
