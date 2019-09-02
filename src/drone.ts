@@ -1,5 +1,5 @@
 import { createSocket } from "dgram";
-import { controllerFactory, IFlightController, initSDK } from "./controller";
+import { controllerFactory, disconnectSocket, IFlightController, initSDK } from "./controller";
 import { connect } from "./listener";
 import { logFactory, LogWriter } from "./logging";
 
@@ -17,8 +17,7 @@ const createConnector = async (log: LogWriter, port?: number, address?: string, 
     await new Promise((res, rej) => {
         socket.once("error", rej);
         const timeoutId = setTimeout(() => {
-            socket.removeAllListeners();
-            socket.close();
+            disconnectSocket(log, socket);
             rej();
         }, droneTimeout);
         socket.once("listening", () => {
@@ -47,7 +46,7 @@ export const droneFactory = async (logWriter: LogWriter): Promise<IFlightControl
 
     logger("creating controller");
     const controller = controllerFactory(logger, drone, address);
-    return Object.assign(controller, {
+    return Object.assign({}, controller, {
         disconnect: () => {
             controller.disconnect();
             stateConnector.removeAllListeners();
