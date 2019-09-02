@@ -45,7 +45,7 @@ export const droneFactory = async (logWriter: LogWriter): Promise<IFlightControl
     const stateConnector = await createConnector(connLogger, 8890);
 
     logger("creating controller");
-    const controller = controllerFactory(logger, drone, address);
+    const controller = controllerFactory(logWriter, drone, address);
     return Object.assign({}, controller, {
         disconnect: () => {
             controller.disconnect();

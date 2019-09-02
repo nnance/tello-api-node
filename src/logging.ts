@@ -8,7 +8,7 @@ export const consoleWriter: LogWriter = console.log;
 export const voidWriter: LogWriter = (msg) => {};
 
 export const logFactory: Logger = (writer, module, prefix = "") => (msg) => {
-    if (!process.env.LOG || process.env.LOG === module) {
-        writer(`${prefix} - ${msg}`);
+    if (process.env.LOG && (process.env.LOG === "all" || process.env.LOG === module)) {
+        prefix ? writer(`${prefix} - ${msg}`) : writer(msg);
     }
 };

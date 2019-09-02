@@ -41,10 +41,8 @@ export const disconnectSocket = (log: LogWriter, socket: Socket) => {
     socket.close();
 };
 
-const logger = (log: LogWriter) => logFactory(log, "controller");
-
 export const initSDK = (log: LogWriter, socket: Socket, address: string) => {
-    return commander(logger(log), socket, address)("command", 10000);
+    return commander(log, socket, address)("command", 10000);
 };
 
 export enum FlightDirection {
@@ -71,8 +69,9 @@ export interface IFlightController {
     up: (cm: number) => Promise<Socket>;
 }
 
-export const controllerFactory = (writer: LogWriter, socket: Socket, address: string): IFlightController => {
-    const controllerLogger = logger(writer);
+export const controllerFactory = (logWriter: LogWriter, socket: Socket, address: string): IFlightController => {
+    const controllerLogger = logFactory(logWriter, "controller");
+    controllerLogger("creating controller");
     const sender = commander(controllerLogger, socket, address);
     return {
         back: (cm: number, timeout?: number) => sender(`back ${cm}`, timeout),

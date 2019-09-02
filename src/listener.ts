@@ -3,9 +3,9 @@
  */
 import { EventEmitter } from "events";
 import { throttle } from "lodash";
-import { LogWriter } from "./logging";
+import { logFactory, LogWriter } from "./logging";
 
-export const errorHandler = (log: LogWriter) => (err: Error | null, bytes: number) => {
+const errorHandler = (log: LogWriter) => (err: Error | null, bytes: number) => {
     if (err) {
         log(`server error:\n${err.stack}`);
     }
@@ -30,13 +30,13 @@ export const stateParser = (state: string) => {
 
 export type StateListener = (state: {}) => void;
 
-export const connect = (logger: LogWriter, emitter: EventEmitter, logThrottle = 2000, listener?: StateListener) => {
+export const connect = (logWriter: LogWriter, emitter: EventEmitter, logThrottle = 2000, listener?: StateListener) => {
     // drone sends hundreds of messages per minute so this handler will throttle them to only send on defined interval
-    const msgThrottler = throttle(messageHandler(logger), logThrottle);
+    const msgThrottler = throttle(messageHandler(logWriter), logThrottle);
 
     emitter.on("message", msgThrottler);
-    emitter.on("error", errorHandler(logger));
-    emitter.on("listening", listeningHandler(logger));
+    emitter.on("error", errorHandler(logWriter));
+    emitter.on("listening", listeningHandler(logWriter));
 
     if (listener) {
         emitter.on("message", (msg: string) => listener(stateParser(msg)));
