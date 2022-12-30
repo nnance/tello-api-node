@@ -19,7 +19,7 @@
     "@types/lodash": "^4.14.137",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.2",
-    "mocha": "^6.2.0",
+    "mocha": "^10.2.0",
     "tslint": "^5.19.0",
     "typescript": "^3.5.3"
   },
